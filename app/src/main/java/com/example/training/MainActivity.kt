@@ -81,13 +81,8 @@ class MainActivity : ComponentActivity() {
                 OneTimeWorkRequest.Builder(MyWorkCls::class.java).setConstraints(powerConstraint)
                     .build()
 
-            val periodicUpdate =
-                PeriodicWorkRequest.Builder(MyWorkCls::class.java, 5, TimeUnit.SECONDS)
-                    .build()
 
             var state by remember { mutableStateOf(false) }
-            var phoneNumber by remember { mutableStateOf("") }
-            var message by remember { mutableStateOf("") }
             var status by remember { mutableStateOf(false) }
             var isPermissionGranted by remember { mutableStateOf(false) }
 
@@ -98,30 +93,16 @@ class MainActivity : ComponentActivity() {
                     isPermissionGranted = isGranted
                 }
 
-           if (state){
-               val workManager = mainViewModel.value.scheduleNotification(context)
+            if (state) {
+                val workManager = mainViewModel.value.scheduleNotification(context)
 
-               workManager.getWorkInfoByIdLiveData(periodicUpdate.id)
-                   .observe(this) {
-                       println("========== Work status: $it.status  \n")
-                       //  stats= "\n"+it.state.name+"\n"
-                       Log.d("onCreate", "$it.status")
-                   }
-           }
-            /*if (state) {
-                workManager.enqueue(periodicUpdate)
-                workManager.getWorkInfoByIdLiveData(periodicUpdate.id)
+                workManager.getWorkInfoByIdLiveData(mainViewModel.value.periodicUpdate.id)
                     .observe(this) {
                         println("========== Work status: $it.status  \n")
                         //  stats= "\n"+it.state.name+"\n"
                         Log.d("onCreate", "$it.status")
                     }
-                if (isPermissionGranted) {
-                    //sendSms(phoneNumber, message)
-                } else {
-                    requestPermissionLauncher.launch(Manifest.permission.SEND_SMS)
-                }
-            }*/
+            }
             TrainingTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -131,12 +112,16 @@ class MainActivity : ComponentActivity() {
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        TextField(value = phoneNumber,
-                            onValueChange = { phoneNumber = it },
+                        TextField(value = mainViewModel.value.phoneNumber,
+                            onValueChange = { mainViewModel.value.phoneNumber = it },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                             placeholder = {
                                 Text(
                                     text = "Phone Number",
+                                )
+                            }, supportingText = {
+                                if (mainViewModel.value.isPhoneNumberError) Text(
+                                    text = mainViewModel.value.phoneNumberError,color= Color.Red
                                 )
                             })
                         Spacer(
@@ -144,11 +129,15 @@ class MainActivity : ComponentActivity() {
                                 .fillMaxWidth()
                                 .height(15.dp)
                         )
-                        TextField(value = message,
-                            onValueChange = { message = it },
+                        TextField(value = mainViewModel.value.message,
+                            onValueChange = { mainViewModel.value.message = it },
                             placeholder = {
                                 Text(
                                     text = "Message",
+                                )
+                            }, supportingText = {
+                                if (mainViewModel.value.isMessageError) Text(
+                                    text = mainViewModel.value.messageError,color= Color.Red
                                 )
                             })
                         Spacer(
@@ -157,7 +146,7 @@ class MainActivity : ComponentActivity() {
                                 .height(15.dp)
                         )
                         Button(onClick = {
-                            state = !state
+                            if (mainViewModel.value.validate()) state = !state
                         }) {
                             Text(
                                 text = "Push Message",
@@ -186,55 +175,11 @@ fun MyButton(currentCount: Int, updateCount: () -> Unit) {
     }
 }
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-
-
-}
-
-
-fun notifexpl(title: String, description: String, context: Context)
-        : Boolean {
-
-    var notificationManager =
-        context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-    val notificationChannel =
-        NotificationChannel("101", "channel", NotificationManager.IMPORTANCE_DEFAULT)
-    notificationManager.createNotificationChannel(notificationChannel)
-
-    var inte = Intent(context, MainActivity::class.java)
-
-    var pendin = PendingIntent.getActivity(
-        context,
-        0,
-        inte,
-        PendingIntent.FLAG_IMMUTABLE
-    )
-    val notificationBuilder = NotificationCompat.Builder(context, "101")
-        .setContentTitle(title)
-        .setContentText(description)
-        .setContentIntent(pendin)
-        .setSmallIcon(android.R.drawable.star_big_on)
-
-    notificationManager.notify(1, notificationBuilder.build())
-
-    return true
-
-    //Notification:
-    // Intent .
-    // pendingIntent.
-    // Notification.builder.
-    // NotificationManager.
-    // Notification Channel
-    // version check
-
-}
 
 @Preview(showBackground = true)
 @Composable
 fun GreetingPreview() {
     TrainingTheme {
-        Greeting("Android")
+        //Greeting("Android")
     }
 }
