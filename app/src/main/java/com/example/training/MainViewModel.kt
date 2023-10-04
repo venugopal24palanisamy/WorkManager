@@ -7,6 +7,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.work.PeriodicWorkRequest
 import androidx.work.PeriodicWorkRequestBuilder
@@ -25,25 +27,32 @@ class MainViewModel : ViewModel() {
     var phoneNumberError by mutableStateOf("")
 
 
+    val _myLiveData = MutableLiveData<String>()
+    val myLiveData: LiveData<String> get() = _myLiveData
+
+
+
+    fun updateValue(newValue: String) {
+        _myLiveData.value = newValue
+    }
+
     fun increaseCount() {
         count++
     }
 
-    val periodicUpdate = PeriodicWorkRequest.Builder(
-        MyWorkCls::class.java, 1, TimeUnit.HOURS
-    ).build()
 
     @SuppressLint("InvalidPeriodicWorkRequestInterval")
     fun scheduleNotification(context: Context): WorkManager {
         val workManager = WorkManager.getInstance(context)
-
+        val periodicUpdate = PeriodicWorkRequest.Builder(
+            MyWorkCls::class.java, 1, TimeUnit.HOURS
+        ).build()
         workManager.enqueue(periodicUpdate)
         Log.d("scheduleNotification", "insideViewModel")
         return workManager
     }
 
     fun validate(): Boolean {
-
         if (phoneNumber.isEmpty()) {
             isPhoneNumberError = true
             phoneNumberError = "Enter Phone Number"
@@ -51,7 +60,6 @@ class MainViewModel : ViewModel() {
         } else {
             phoneNumberError = ""
             isPhoneNumberError = false
-
         }
 
         if (phoneNumber.length > 10 || phoneNumber.length < 10) {
